@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wireguard-ui-ingress
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  rules:
+    - host: wireguard-ui.172.199.209.31.nip.io
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: wireguard-ui
+              port:
+                number: 5000
+  tls:
+    - hosts:
+        - wireguard-ui.172.199.209.31.nip.io
+      secretName: wireguard-ui-tls

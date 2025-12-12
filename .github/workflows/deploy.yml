@@ -1,0 +1,30 @@
+name: Deploy WireGuard + UI
+
+on:
+  workflow_dispatch: # ручний запуск через GitHub UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Deploy WireGuard server
+        run: |
+          kubectl apply -f deploy/wireguard/deployment.yaml
+          kubectl apply -f deploy/wireguard/service.yaml
+          kubectl rollout status deployment/wireguard
+
+      - name: Deploy WireGuard UI
+        run: |
+          kubectl apply -f deploy/wireguard-ui/deployment.yaml
+          kubectl apply -f deploy/wireguard-ui/service.yaml
+          kubectl apply -f deploy/wireguard-ui/ingress.yaml
+          kubectl rollout status deployment/wireguard-ui
