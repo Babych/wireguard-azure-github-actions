@@ -30,7 +30,7 @@ jobs:
           export KUBECONFIG=$(pwd)/kubeconfig
 
       - name: Ensure wireguard namespace exists
-      run: |
+        run: |
           export KUBECONFIG=$(pwd)/kubeconfig
           kubectl create namespace wireguard --dry-run=client -o yaml | kubectl apply -f -
 
