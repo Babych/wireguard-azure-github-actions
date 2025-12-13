@@ -22,7 +22,10 @@ spec:
             - name: WGUI_USERNAME
               value: "admin"
             - name: WGUI_PASSWORD
-              value: "changeme123"
+              valueFrom:
+                secretKeyRef:
+                  name: wireguard-ui-credentials
+                  key: password
 
             - name: WGUI_MANAGE_START
               value: "true"
