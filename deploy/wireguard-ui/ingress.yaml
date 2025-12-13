@@ -7,7 +7,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
-    - host: wireguard-ui.172.199.209.31.nip.io
+    - host: wireguard-ui.132.220.109.106.nip.io
       http:
         paths:
         - path: /
@@ -19,5 +19,5 @@ spec:
                 number: 5000
   tls:
     - hosts:
-        - wireguard-ui.172.199.209.31.nip.io
+        - wireguard-ui.132.220.109.106.nip.io
       secretName: wireguard-ui-tls
