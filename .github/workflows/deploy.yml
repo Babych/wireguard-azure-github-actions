@@ -1,7 +1,15 @@
 name: Deploy WireGuard + UI
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: main
 
 jobs:
   deploy:
@@ -20,14 +28,30 @@ jobs:
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > kubeconfig
           export KUBECONFIG=$(pwd)/kubeconfig
-          kubectl config view
+
+      - name: Create WireGuard config secret
+        run: |
+          export KUBECONFIG=$(pwd)/kubeconfig
+
+          cat <<EOF > wg0.conf
+          [Interface]
+          Address = 10.252.1.1/24
+          ListenPort = 51820
+          PrivateKey = ${{ secrets.WG_SERVER_PRIVATE_KEY }}
+          SaveConfig = true
+          EOF
+
+          kubectl create secret generic wireguard-config \
+            --from-file=wg0.conf \
+            -n wireguard \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy WireGuard server
         run: |
           export KUBECONFIG=$(pwd)/kubeconfig
           kubectl apply -f deploy/wireguard/deployment.yaml
           kubectl apply -f deploy/wireguard/service.yaml
-          kubectl rollout status deployment/wireguard
+          kubectl rollout status deployment/wireguard -n wireguard
 
       - name: Deploy WireGuard UI
         run: |
@@ -35,4 +59,4 @@ jobs:
           kubectl apply -f deploy/wireguard-ui/deployment.yaml
           kubectl apply -f deploy/wireguard-ui/service.yaml
           kubectl apply -f deploy/wireguard-ui/ingress.yaml
-          kubectl rollout status deployment/wireguard-ui
+          kubectl rollout status deployment/wireguard-ui -n wireguard
