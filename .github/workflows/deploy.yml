@@ -25,7 +25,7 @@ jobs:
           version: 'latest'
 
       - name: Create / update wireguard UI secret
-      run: |
+        run: |
           kubectl create secret generic wireguard-ui-credentials \
           -n wireguard \
           --from-literal=password="${{ secrets.WGUI_PASSWORD }}" \
