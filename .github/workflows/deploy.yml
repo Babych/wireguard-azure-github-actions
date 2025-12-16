@@ -3,6 +3,7 @@ name: Deploy WireGuard to K8s
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
