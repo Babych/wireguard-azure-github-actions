@@ -17,11 +17,11 @@ jobs:
       with:
         version: 'latest'
 
-    - name: Set up K8s context
-      uses: azure/k8s-set-context@v3
-      with:
-        method: kubeconfig
-        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+    - name: Set kubeconfig
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > ~/.kube/config
+        chmod 600 ~/.kube/config
 
     - name: Apply K8s manifests
       run: |
