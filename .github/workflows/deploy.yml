@@ -1,75 +1,30 @@
-name: Deploy WireGuard + UI
+name: Deploy WireGuard to K8s
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Branch to deploy'
-        required: true
-        default: main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
 
-      - name: Create / update wireguard UI secret
-        run: |
-          kubectl create secret generic wireguard-ui-credentials \
-          -n wireguard \
-          --from-literal=password="${{ secrets.WGUI_PASSWORD }}" \
-          --dry-run=client -o yaml | kubectl apply -f -
+    - name: Set kubeconfig
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > ~/.kube/config
+        chmod 600 ~/.kube/config
 
-      - name: Configure kubeconfig
-        run: |
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > kubeconfig
-          export KUBECONFIG=$(pwd)/kubeconfig
-
-      - name: Ensure wireguard namespace exists
-        run: |
-          export KUBECONFIG=$(pwd)/kubeconfig
-          kubectl create namespace wireguard --dry-run=client -o yaml | kubectl apply -f -
-
-
-      - name: Create WireGuard config secret
-        run: |
-          export KUBECONFIG=$(pwd)/kubeconfig
-
-          cat <<EOF > wg0.conf
-          [Interface]
-          Address = 10.252.1.1/24
-          ListenPort = 51820
-          PrivateKey = ${{ secrets.WG_SERVER_PRIVATE_KEY }}
-          SaveConfig = true
-          EOF
-
-          kubectl create secret generic wireguard-config \
-            --from-file=wg0.conf \
-            -n wireguard \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Deploy WireGuard server
-        run: |
-          export KUBECONFIG=$(pwd)/kubeconfig
-          kubectl apply -f deploy/wireguard/deployment.yaml
-          kubectl apply -f deploy/wireguard/service.yaml
-          kubectl rollout status deployment/wireguard -n wireguard
-
-      - name: Deploy WireGuard UI
-        run: |
-          export KUBECONFIG=$(pwd)/kubeconfig
-          kubectl apply -f deploy/wireguard-ui/deployment.yaml
-          kubectl apply -f deploy/wireguard-ui/service.yaml
-          kubectl apply -f deploy/wireguard-ui/ingress.yaml
-          kubectl rollout status deployment/wireguard-ui -n wireguard
+    - name: Apply K8s manifests
+      run: |
+        kubectl apply -f k8s/wireguard/pvc.yaml
+        kubectl apply -f k8s/wireguard/deployment.yaml
+        kubectl apply -f k8s/wireguard/service.yaml
